@@ -41,17 +41,55 @@ flowchart LR
 
 ## ⚙️ Components
 
+The system is composed of multiple independent repositories, each with a clearly defined responsibility.
+
 ### 🖥️ Backends
 
-- Node.js
-- Python
-- Go
+Identical backend services implemented in different runtimes and deployed under the same conditions.  
+Each service exposes a simple health endpoint used for benchmarking.
+
+- 🟡 **Node.js Backend**  
+  Repository: [fs-lab-core-api-node](https://github.com/fs-lab-system/fs-lab-core-api-node)
+  Purpose: Measure startup and runtime characteristics of a JavaScript-based server environment.
+
+- 🔵 **Python Backend**  
+  Repository: [fs-lab-core-api-python](https://github.com/fs-lab-system/fs-lab-core-api-python)
+  Purpose: Measure interpreter-based startup overhead and runtime variance.
+
+- 🟢 **Go Backend**  
+   Repository: [fs-lab-core-api-go](https://github.com/fs-lab-system/fs-lab-core-api-go)  
+   Purpose: Measure cold and warm start behavior of a compiled, statically linked runtime.
+
+---
 
 ### ⏱️ Benchmark & Cronjobs
 
+Automated benchmarking is executed via GitHub Actions workflows.  
+These workflows periodically trigger backend endpoints and record detailed timing metrics.
+
+- ⏱️ **Benchmark Cronjobs**  
+  Repository: [fs-lab-cron](https://github.com/fs-lab-system/fs-lab-cron)
+  Purpose: Execute scheduled measurements and persist results to the central database.
+
+---
+
 ### 🤖 ML / Analysis
 
+Offline analysis and machine learning are executed asynchronously and are fully decoupled from request handling.
+
+- 🤖 **ML Analysis Jobs**  
+  Repository: planned
+  Purpose: Detect anomalies, identify patterns, and derive cold start probabilities from collected data.
+
+---
+
 ### 🌐 Frontend
+
+A static frontend application used for visualization and manual exploration.
+
+- 🌐 **Frontend**  
+  Repository: [fs-lab-core-react](https://github.com/fs-lab-system/fs-lab-core-react)  
+  Purpose: Visualize raw measurements, analysis results, and enable manual endpoint testing.
 
 ## 🔄 Data Flow
 
