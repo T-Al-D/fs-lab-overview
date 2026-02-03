@@ -77,7 +77,7 @@ These workflows periodically trigger backend endpoints and record detailed timin
 
 Offline analysis and machine learning are executed asynchronously and are fully decoupled from request handling.
 
-- 🤖 **ML Analysis Jobs**  
+- 📈 **ML Analysis Jobs**  
   Repository: planned
   Purpose: Detect anomalies, identify patterns, and derive cold start probabilities from collected data.
 
@@ -155,6 +155,32 @@ Machine learning models do not modify system behavior, trigger scaling actions, 
 The machine learning component is implemented incrementally and is intentionally decoupled from all runtime-critical paths.
 
 ## 🧠 Architectural Decisions
+
+The architecture of this system is intentionally modular and loosely coupled to reflect realistic production environments.
+
+### 🧩 Multiple Independent Services
+
+Backend implementations are separated into individual services rather than combined into a monolithic or multi-runtime application. This allows each runtime to be deployed, started, and measured under identical platform conditions without shared state or cross-runtime interference.
+
+### ⏱️ Asynchronous Benchmarking and Analysis
+
+Benchmarking and machine learning are executed asynchronously and outside of the request handling path. This decision avoids measurement bias, prevents feedback loops, and ensures that observed latency reflects platform and runtime behavior rather than instrumentation overhead.
+
+### 🗄️ Centralized, Authoritative Data Store
+
+All benchmark data is persisted in a single PostgreSQL database which serves as the authoritative source for analysis. Derived metrics, aggregations, and machine learning results are computed downstream and never replace or modify raw measurement data.
+
+### 🚫 No Runtime Instrumentation or Tracing
+
+The system intentionally avoids application-level tracing, profiling, or runtime instrumentation. All measurements are based on externally observable behavior to ensure fairness and comparability across different runtimes and implementations.
+
+### 🤖 Machine Learning as Analysis, Not Control
+
+Machine learning is used strictly as an analytical tool. It does not influence runtime behavior, scaling decisions, or request routing, and operates exclusively on historical data in batch mode.
+
+### 🏢 Repository Organization
+
+Repositories are organized as independent projects within a GitHub organization to reflect a realistic multi-service setup. Each repository has a clearly defined responsibility and lifecycle, reducing coupling and improving clarity.
 
 ## 🚀 Current State
 
