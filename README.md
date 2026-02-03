@@ -184,4 +184,20 @@ Repositories are organized as independent projects within a GitHub organization 
 
 ## 🚀 Current State
 
+The core system architecture is implemented and operational.
+
+Multiple backend services (Go, Node.js, Python) are deployed under identical conditions and expose a uniform health endpoint. Automated benchmark workflows are in place and continuously collect latency measurements which are persisted in a central PostgreSQL database.
+
+The frontend provides basic visualization of collected data and supports manual endpoint testing for exploratory purposes. All manual interactions are clearly separated from automated benchmark data.
+
+The machine learning component is currently in a preparatory phase. Data structures, measurement methodology, and architectural boundaries are defined, while model implementation and analysis workflows are planned as a subsequent step.
+
 ## 🛣️ Next Steps
+
+Planned next steps focus on extending analytical depth while preserving measurement integrity.
+
+- Implement offline machine learning analysis jobs for anomaly detection and pattern discovery in cold start behavior.
+- Introduce derived metrics and aggregated views to enable trend analysis and percentile-based comparisons.
+- Improve frontend visualization to better highlight variance, outliers, and long-term trends.
+- Refine cold start classification heuristics based on empirical observations.
+- Document analytical findings and observed platform behavior as the dataset grows.
