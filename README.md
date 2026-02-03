@@ -144,6 +144,16 @@ The system records a defined set of metrics to enable consistent comparison acro
 
 ## 🤖 Role of Machine Learning
 
+Machine learning is used as an offline analysis tool to identify patterns and anomalies in collected benchmark data.
+
+The purpose of machine learning in this system is not to make real-time decisions or influence request handling. Instead, ML operates exclusively on historical, authoritative benchmark data and is executed asynchronously in batch jobs.
+
+Typical use cases include anomaly detection in cold start behavior, identification of latency clusters, and exploratory analysis of platform-induced variance.
+
+Machine learning models do not modify system behavior, trigger scaling actions, or affect request routing. All ML results are treated as analytical insights and are consumed exclusively by visualization and reporting components.
+
+The machine learning component is implemented incrementally and is intentionally decoupled from all runtime-critical paths.
+
 ## 🧠 Architectural Decisions
 
 ## 🚀 Current State
