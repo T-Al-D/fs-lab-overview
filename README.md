@@ -93,6 +93,16 @@ A static frontend application used for visualization and manual exploration.
 
 ## 🔄 Data Flow
 
+The system distinguishes between two different request paths: automated benchmark measurements and manual exploratory requests.
+
+Automated measurements are executed by scheduled GitHub Actions workflows. These workflows periodically trigger the health endpoints of all backend services under controlled conditions. For each request, timing-related metadata such as total response time, timestamp, and backend identifier are collected.
+
+The collected measurements are written directly to a central PostgreSQL database (Supabase). This dataset represents the authoritative source for all benchmarking and performance analysis.
+
+In addition to automated measurements, the frontend allows users to manually trigger backend endpoints. These requests are intended for exploratory testing, debugging, and validation only. Results from manual requests are explicitly excluded from the primary benchmarking dataset and are not used for statistical analysis or machine learning.
+
+All downstream analysis, aggregation, and machine learning processes operate exclusively on the automated benchmark data and are executed asynchronously.
+
 ## 📊 Metrics & Measurements
 
 ## 🤖 Role of Machine Learning
