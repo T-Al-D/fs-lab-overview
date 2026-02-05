@@ -78,7 +78,7 @@ These workflows periodically trigger backend endpoints and record detailed timin
 Offline analysis and machine learning are executed asynchronously and are fully decoupled from request handling.
 
 - 📈 **ML Analysis Jobs**  
-  Repository: planned
+  Repository: [fs-lab-ml](https://github.com/fs-lab-system/fs-lab-ml)
   Purpose: Detect anomalies, identify patterns, and derive cold start probabilities from collected data.
 
 ---
