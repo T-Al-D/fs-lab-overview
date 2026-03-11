@@ -64,15 +64,15 @@ flowchart LR
     ML -->|store derived features| DB
     DB -->|query results| FE_View
 
-    classDef benchmark fill:#fff3bf,stroke:#f08c00
-    classDef service fill:#e7f5ff,stroke:#1c7ed6
-    classDef data fill:#e6fcf5,stroke:#099268
-    classDef frontend fill:#f3f0ff,stroke:#7048e8
+    classDef benchmark fill:#ffe8cc,stroke:#d9480f,color:#000
+    classDef service fill:#d0ebff,stroke:#1c7ed6,color:#000
+    classDef data fill:#d3f9d8,stroke:#2b8a3e,color:#000
+    classDef frontend fill:#e5dbff,stroke:#5f3dc4,color:#000
 
     class Cron benchmark
     class BE service
     class DB,ML data
-    class FE frontend
+    class FE_Test,FE_View frontend
 ```
 
 ## ⚙️ Components
