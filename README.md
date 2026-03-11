@@ -37,9 +37,11 @@ flowchart LR
     ML[🤖 ML / Analysis<br/>Batch Jobs]
     FE_View[🌐 Frontend<br/>Visualization]
 
-    Cron --> BE
     FE_Test --> BE
-    BE --> DB
+    Cron --> BE
+    BE --> Cron
+
+    Cron --> DB
     DB --> ML
     ML --> DB
     DB --> FE_View
