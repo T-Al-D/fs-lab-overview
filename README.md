@@ -30,21 +30,49 @@ The frontend is a static application that visualizes raw measurements and derive
 
 ```mermaid
 flowchart LR
-    Cron[⏱️ GitHub Cronjob<br/>Benchmark]
+    Cron[⏱️ GitHub Cronjob<br/>Benchmark Runner]
     FE_Test[🖥️ Frontend<br/>Manual Tests]
     BE[⚙️ Backends<br/>Go · Node · Python]
     DB[(🗄️ Supabase<br/>PostgreSQL)]
     ML[🤖 ML / Analysis<br/>Batch Jobs]
     FE_View[🌐 Frontend<br/>Visualization]
 
-    FE_Test --> BE
-    Cron --> BE
-    BE --> Cron
+    subgraph Presentation
+    FE_Test
+    FE_View
+    end
 
-    Cron --> DB
-    DB --> ML
-    ML --> DB
-    DB --> FE_View
+    subgraph Service Layer
+    BE
+    end
+
+    subgraph Data & Analysis
+    DB
+    ML
+    end
+
+    subgraph Benchmark-Testing
+    Cron
+    end
+
+    FE_Test -->|HTTPS request| BE
+    BE -->|response| FE_Test
+    Cron -->|HTTPS request| BE
+    BE -->|response| Cron
+    Cron -->|store benchmark metrics| DB
+    DB -.->|read benchmark data| ML
+    ML -->|store derived features| DB
+    DB -->|query results| FE_View
+
+    classDef benchmark fill:#fff3bf,stroke:#f08c00
+    classDef service fill:#e7f5ff,stroke:#1c7ed6
+    classDef data fill:#e6fcf5,stroke:#099268
+    classDef frontend fill:#f3f0ff,stroke:#7048e8
+
+    class Cron benchmark
+    class BE service
+    class DB,ML data
+    class FE frontend
 ```
 
 ## ⚙️ Components
