@@ -14,18 +14,6 @@ The project focuses on measuring real-world latency, platform-induced variance, 
 
 The goal is not to compare languages in isolation, but to understand how runtime, platform, and deployment characteristics interact in practice.
 
-## 🧩 System Architecture
-
-The system consists of multiple independently deployed backend services, a central data store, asynchronous analysis jobs, and a static frontend.
-
-Each backend service exposes an identical health endpoint and is deployed on the same hosting platform to ensure comparable conditions. Backend endpoints can be triggered both by automated benchmarking workflows and manually via the frontend for interactive inspection.
-
-Automated benchmarking is executed via scheduled GitHub workflows that record detailed timing information under controlled conditions. Manual frontend-triggered requests are intended for exploratory testing and are not used as primary benchmarking data.
-
-All measurements are persisted in a central PostgreSQL database (Supabase). Analysis and machine learning are executed asynchronously in batch jobs and never interfere with request handling or benchmarking.
-
-The frontend is a static application that visualizes raw measurements and derived analysis results.
-
 ## 🗺️ Architecture Diagram
 
 ```mermaid
@@ -34,8 +22,13 @@ flowchart LR
     FE_Test[🖥️ Frontend<br/>Manual Tests]
     BE[⚙️ Backends<br/>Go · Node · Python]
     DB[(🗄️ Supabase<br/>PostgreSQL)]
-    ML[🤖 ML / Analysis<br/>Batch Jobs]
+    ML[🤖 ML / Feature Analysis<br/>Batch Jobs]
     FE_View[🌐 Frontend<br/>Visualization]
+
+    CF_Worker[☁️ Cloudflare Worker<br/>API Layer]
+    KV[(⚡ KV Store<br/>Latest Analysis)]
+    D1[(🧠 D1 Database<br/>Historical Analysis)]
+    AI[🤖 AI Processing<br/>Prompt + LLM]
 
     subgraph Presentation
     FE_Test
@@ -55,8 +48,19 @@ flowchart LR
     Cron
     end
 
+    subgraph Cloudflare Layer
+        CF_Worker
+        AI
+        KV
+        D1
+    end
+
+    %% Frontend Consumption
+    FE_View -->|GET /kv-latest| CF_Worker
+    CF_Worker -->|JSON response| FE_View
     FE_Test -->|HTTPS request| BE
     BE -->|response| FE_Test
+
     Cron -->|HTTPS request| BE
     BE -->|response| Cron
     Cron -->|store benchmark metrics| DB
@@ -64,16 +68,37 @@ flowchart LR
     ML -->|store derived features| DB
     DB -->|query results| FE_View
 
+    %% Cloudflare AI Pipeline
+    DB -->|fetch snapshots| CF_Worker
+    CF_Worker -->|aggregate + build prompt| AI
+    AI -->|analysis result| CF_Worker
+     CF_Worker -->|store history| D1
+    CF_Worker -->|cache latest| KV
+
     classDef benchmark fill:#ffe8cc,stroke:#d9480f,color:#000
     classDef service fill:#d0ebff,stroke:#1c7ed6,color:#000
     classDef data fill:#d3f9d8,stroke:#2b8a3e,color:#000
     classDef frontend fill:#e5dbff,stroke:#5f3dc4,color:#000
+    classDef cloud fill:#fff3bf,stroke:#f59f00,color:#000
 
     class Cron benchmark
     class BE service
     class DB,ML data
     class FE_Test,FE_View frontend
+    class KV,D1,CF_Worker,AI cloud
 ```
+
+## 🧩 System Architecture
+
+The system consists of multiple independently deployed backend services, a central data store, asynchronous analysis jobs, and a static frontend.
+
+Each backend service exposes an identical health endpoint and is deployed on the same hosting platform to ensure comparable conditions. Backend endpoints can be triggered both by automated benchmarking workflows and manually via the frontend for interactive inspection.
+
+Automated benchmarking is executed via scheduled GitHub workflows that record detailed timing information under controlled conditions. Manual frontend-triggered requests are intended for exploratory testing and are not used as primary benchmarking data.
+
+All measurements are persisted in a central PostgreSQL database (Supabase). Analysis and machine learning are executed asynchronously in batch jobs and never interfere with request handling or benchmarking.
+
+The frontend is a static application that visualizes raw measurements and derived analysis results.
 
 ## ⚙️ Components
 
@@ -126,6 +151,14 @@ A static frontend application used for visualization and manual exploration.
 - 🌐 **Frontend**  
   Repository: [fs-lab-core-react](https://github.com/fs-lab-system/fs-lab-core-react)  
   Purpose: Visualize raw measurements, analysis results, and enable manual endpoint testing.
+
+---
+
+### ☁️ Cloud Integration Overview
+
+The project uses a cloud-based analysis layer built on Cloudflare Workers to process and deliver AI-driven insights efficiently. Benchmark data is periodically collected and stored in a database, then fetched by the Worker, where it is aggregated and transformed into structured prompts for AI models. The resulting analysis is stored persistently in a D1 database while the most recent results are cached in a KV store for fast access.
+
+The frontend does not interact directly with the database; instead, it communicates with the Worker via a simple HTTP endpoint (/kv-latest). This ensures low latency, reduces load on the database, and cleanly separates data processing from presentation. The architecture combines edge execution, caching, and serverless AI processing to provide near real-time insights with minimal overhead.
 
 ## 🔄 Data Flow
 
@@ -226,14 +259,4 @@ Multiple backend services (Go, Node.js, Python) are deployed under identical con
 
 The frontend provides basic visualization of collected data and supports manual endpoint testing for exploratory purposes. All manual interactions are clearly separated from automated benchmark data.
 
-The machine learning component is currently in a preparatory phase. Data structures, measurement methodology, and architectural boundaries are defined, while model implementation and analysis workflows are planned as a subsequent step.
-
-## 🛣️ Next Steps
-
-Planned next steps focus on extending analytical depth while preserving measurement integrity.
-
-- Implement offline machine learning analysis jobs for anomaly detection and pattern discovery in cold start behavior.
-- Introduce derived metrics and aggregated views to enable trend analysis and percentile-based comparisons.
-- Improve frontend visualization to better highlight variance, outliers, and long-term trends.
-- Refine cold start classification heuristics based on empirical observations.
-- Document analytical findings and observed platform behavior as the dataset grows.
+Instead of using traditional machine learning pipelines, the project leverages an AI-powered Cloudflare Worker to analyze aggregated data.
