@@ -6,13 +6,19 @@
 
 #### [Frontend on Render](https://fs-lab-core-react.onrender.com/)
 
+### 🔍 Key Insights
+
+- Cold vs warm start behavior varies significantly across runtimes under identical hosting conditions
+- Platform-induced latency variance can exceed runtime-specific differences
+- Real-world environments introduce non-deterministic performance characteristics not visible in synthetic benchmarks
+
 ## 🎯 Project Goal
 
-fs-lab is a multi-service system designed to benchmark and analyze cold and warm start behavior across different backend runtimes (Node.js, Python, Go) hosted on the same platform.
+fs-lab is a multi-service system designed to analyze cold and warm start behavior across different backend runtimes (Node.js, Python, Go) under identical hosting conditions.
 
-The project focuses on measuring real-world latency, platform-induced variance, and startup characteristics under identical conditions. All measurements are collected automatically, stored centrally, and analyzed asynchronously.
+The system focuses on observing real-world latency, platform-induced variance, and runtime startup characteristics in a production-like environment.
 
-The goal is not to compare languages in isolation, but to understand how runtime, platform, and deployment characteristics interact in practice.
+Rather than comparing languages in isolation, the project investigates how runtime, hosting platform, and deployment constraints interact and influence observable performance.
 
 ## 🗺️ Architecture Diagram
 
@@ -22,7 +28,7 @@ flowchart LR
     FE_Test[🖥️ Frontend<br/>Manual Tests]
     BE[⚙️ Backends<br/>Go · Node · Python]
     DB[(🗄️ Supabase<br/>PostgreSQL)]
-    ML[🤖 ML / Feature Analysis<br/>Batch Jobs]
+    ML[🔍 Feature Analysis<br/>Batch Jobs]
     FE_View[🌐 Frontend<br/>Visualization]
 
     CF_Worker[☁️ Cloudflare Worker<br/>API Layer]
@@ -90,15 +96,13 @@ flowchart LR
 
 ## 🧩 System Architecture
 
-The system consists of multiple independently deployed backend services, a central data store, asynchronous analysis jobs, and a static frontend.
+The system consists of independently deployed backend services, a centralized data store, asynchronous analysis pipelines, and a decoupled frontend.
 
-Each backend service exposes an identical health endpoint and is deployed on the same hosting platform to ensure comparable conditions. Backend endpoints can be triggered both by automated benchmarking workflows and manually via the frontend for interactive inspection.
+Each backend exposes an identical health endpoint and is deployed under the same platform conditions to ensure comparability. Endpoints are triggered via automated benchmarking workflows and manually through the frontend for exploratory inspection.
 
-Automated benchmarking is executed via scheduled GitHub workflows that record detailed timing information under controlled conditions. Manual frontend-triggered requests are intended for exploratory testing and are not used as primary benchmarking data.
+Automated measurements are collected under controlled conditions and stored as the authoritative dataset. Manual requests are explicitly excluded from analysis to prevent bias.
 
-All measurements are persisted in a central PostgreSQL database (Supabase). Analysis and machine learning are executed asynchronously in batch jobs and never interfere with request handling or benchmarking.
-
-The frontend is a static application that visualizes raw measurements and derived analysis results.
+All analysis is performed asynchronously and fully decoupled from request handling, ensuring that observed latency reflects runtime and platform behavior rather than measurement overhead.
 
 ## ⚙️ Components
 
@@ -134,13 +138,17 @@ These workflows periodically trigger backend endpoints and record detailed timin
 
 ---
 
-### 🤖 ML / Analysis
+### 🧩🔍 Feature Analysis
 
-Offline analysis and machine learning are executed asynchronously and are fully decoupled from request handling.
+The system performs structured feature analysis on collected benchmark data.
 
-- 📈 **ML Analysis Jobs**  
-  Repository: [fs-lab-ml](https://github.com/fs-lab-system/fs-lab-ml)
-  Purpose: Detect anomalies, identify patterns, and derive cold start probabilities from collected data.
+Raw measurements are transformed into derived features such as cold start classification, time since last invocation, and aggregated latency metrics. This step creates a consistent and analyzable dataset for downstream processing.
+
+Feature analysis operates exclusively on automated benchmark data and is executed asynchronously to avoid influencing measurement results.
+
+- 📈 **Feature Analysis Jobs**  
+  Repository: [fs-lab-ml](https://github.com/fs-lab-system/fs-lab-ml)  
+  Purpose: Transform raw benchmark data into structured features and enable statistical analysis.
 
 ---
 
@@ -156,9 +164,19 @@ A static frontend application used for visualization and manual exploration.
 
 ### ☁️ Cloud Integration Overview
 
-The project uses a cloud-based analysis layer built on Cloudflare Workers to process and deliver AI-driven insights efficiently. Benchmark data is periodically collected and stored in a database, then fetched by the Worker, where it is aggregated and transformed into structured prompts for AI models. The resulting analysis is stored persistently in a D1 database while the most recent results are cached in a KV store for fast access.
+The system includes an edge-based analysis layer implemented with Cloudflare Workers.
 
-The frontend does not interact directly with the database; instead, it communicates with the Worker via a simple HTTP endpoint (/kv-latest). This ensures low latency, reduces load on the database, and cleanly separates data processing from presentation. The architecture combines edge execution, caching, and serverless AI processing to provide near real-time insights with minimal overhead.
+Benchmark data is periodically aggregated and transformed into structured inputs for AI-based analysis. Results are persisted in a D1 database, while the latest insights are cached in a KV store for low-latency access.
+
+The frontend interacts exclusively with the Worker via a lightweight HTTP endpoint, avoiding direct database access. This design reduces load on the primary data store and cleanly separates data processing from presentation.
+
+The architecture explores edge execution, caching strategies, and AI-assisted analysis to enable efficient, near real-time insight generation.
+
+- 🌐 **AI-Cloudworker**  
+  Repository: [fs-lab-cloud](https://github.com/fs-lab-system/fs-lab-cloud)  
+  Purpose: Analyze data using LLMs and store results in KV and D1 (SQLite).
+
+---
 
 ## 🔄 Data Flow
 
@@ -211,21 +229,27 @@ The system records a defined set of metrics to enable consistent comparison acro
 - No application-level instrumentation or tracing is used; all measurements are based on externally observable behavior.
 - Metrics are collected uniformly across all runtimes to ensure comparability.
 
-## 🤖 Role of Machine Learning
+## 🤖 Role of Data Analysis & AI
 
-Machine learning is used as an offline analysis tool to identify patterns and anomalies in collected benchmark data.
+The system uses a two-stage analysis approach consisting of feature engineering and AI-based interpretation.
 
-The purpose of machine learning in this system is not to make real-time decisions or influence request handling. Instead, ML operates exclusively on historical, authoritative benchmark data and is executed asynchronously in batch jobs.
+Instead of implementing a traditional machine learning pipeline, the project intentionally focuses on exploratory analysis. The engineered features are processed by an AI-based analysis layer using Cloudflare Workers, where aggregated data is transformed into structured prompts and evaluated by language models.
 
-Typical use cases include anomaly detection in cold start behavior, identification of latency clusters, and exploratory analysis of platform-induced variance.
+This approach enables flexible interpretation of patterns, anomalies, and runtime behavior without requiring predefined models or training pipelines.
 
-Machine learning models do not modify system behavior, trigger scaling actions, or affect request routing. All ML results are treated as analytical insights and are consumed exclusively by visualization and reporting components.
+All analysis is performed asynchronously on historical benchmark data and does not influence request handling or system behavior.
 
-The machine learning component is implemented incrementally and is intentionally decoupled from all runtime-critical paths.
+The design reflects a deliberate decision to prioritize interpretability and iteration speed over static model training, while still enabling meaningful insights into system performance.
 
 ## 🧠 Architectural Decisions
 
-The architecture of this system is intentionally modular and loosely coupled to reflect realistic production environments.
+The architecture is intentionally modular and loosely coupled to reflect realistic distributed systems.
+
+Independent services allow isolated deployment and unbiased measurement across runtimes. Asynchronous processing prevents measurement interference and avoids feedback loops.
+
+A centralized data store ensures a single source of truth, while derived data is generated downstream without modifying raw measurements.
+
+The system intentionally avoids runtime instrumentation to maintain comparability and focuses exclusively on externally observable behavior.
 
 ### 🧩 Multiple Independent Services
 
@@ -243,9 +267,13 @@ All benchmark data is persisted in a single PostgreSQL database which serves as 
 
 The system intentionally avoids application-level tracing, profiling, or runtime instrumentation. All measurements are based on externally observable behavior to ensure fairness and comparability across different runtimes and implementations.
 
-### 🤖 Machine Learning as Analysis, Not Control
+### 🤖 Analysis as Interpretation, Not Control
 
-Machine learning is used strictly as an analytical tool. It does not influence runtime behavior, scaling decisions, or request routing, and operates exclusively on historical data in batch mode.
+All analysis components in this system are designed strictly for interpretation and insight generation.
+
+They do not influence runtime behavior, scaling decisions, or request routing, and operate exclusively on historical benchmark data in asynchronous processing pipelines.
+
+This ensures that measurement results remain unbiased and are not affected by feedback loops or system-side optimizations.
 
 ### 🏢 Repository Organization
 
@@ -255,8 +283,8 @@ Repositories are organized as independent projects within a GitHub organization 
 
 The core system architecture is implemented and operational.
 
-Multiple backend services (Go, Node.js, Python) are deployed under identical conditions and expose a uniform health endpoint. Automated benchmark workflows are in place and continuously collect latency measurements which are persisted in a central PostgreSQL database.
+Multiple backend services (Go, Node.js, Python) are deployed under identical conditions and continuously benchmarked via automated workflows. Collected measurements are stored in a centralized PostgreSQL database.
 
-The frontend provides basic visualization of collected data and supports manual endpoint testing for exploratory purposes. All manual interactions are clearly separated from automated benchmark data.
+The frontend enables visualization of collected data and supports exploratory testing, while maintaining strict separation from benchmark data.
 
-Instead of using traditional machine learning pipelines, the project leverages an AI-powered Cloudflare Worker to analyze aggregated data.
+An edge-based AI analysis layer processes aggregated data and provides structured insights, enabling ongoing exploration of runtime behavior and platform characteristics.
